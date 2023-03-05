@@ -1,0 +1,37 @@
+version: "0.1"
+services:
+  influxdb:
+    image: influxdb:1.8-alpine
+    container_name: influxdb
+    restart: always
+    environment:
+      - INFLUXDB_DB=influx
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=admin
+    ports:
+      - '8086:8086'
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+
+  speedtest:
+    image: netpresso/netpresso-core
+    container_name: speed-test
+    restart: always
+    links:
+      - "influxdb"
+
+  web:
+    image: netpresso/netpresso-ui
+    container_name: web-ui
+    restart: always
+    depends_on:
+      - influxdb
+      - speedtest
+    ports:
+      - "3000:3000"
+    links:
+      - "influxdb"
+      - "speedtest:speed-test-service"
+
+volumes:
+  influxdb_data: {}
