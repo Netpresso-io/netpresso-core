@@ -21,7 +21,7 @@ services:
 #      - "influxdb"
 
   web:
-    image: netpresso/netpresso-ui:8
+    image: netpresso/netpresso-ui:0.1
     container_name: web-ui
     restart: always
     depends_on:
