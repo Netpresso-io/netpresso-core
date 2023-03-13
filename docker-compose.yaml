@@ -5,33 +5,36 @@ services:
     container_name: influxdb
     restart: always
     environment:
-      - INFLUXDB_DB=influx
-      - INFLUXDB_ADMIN_USER=admin
-      - INFLUXDB_ADMIN_PASSWORD=admin
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword123
+      - DOCKER_INFLUXDB_INIT_ORG=Netpresso
+      - DOCKER_INFLUXDB_INIT_BUCKET=speed-test-metrics
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=admin-token
     ports:
       - '8086:8086'
     volumes:
       - influxdb_data:/var/lib/influxdb
 
-#  speedtest:
-#    image: netpresso/netpresso-core
-#    container_name: speed-test
-#    restart: always
-#    links:
-#      - "influxdb"
+  speedtest:
+    image: netpresso/netpresso-core:0.1
+    container_name: speed-test
+    restart: always
+    links:
+      - "influxdb"
 
   web:
-    image: netpresso/netpresso-ui:0.1
+    image: netpresso/netpresso-ui:0.3
     container_name: web-ui
     restart: always
     depends_on:
       - influxdb
-#      - speedtest
+      - speedtest
     ports:
       - "3000:3000"
     links:
       - "influxdb"
-#      - "speedtest:speed-test-service"
+      - "speedtest"
 
 volumes:
   influxdb_data: {}
