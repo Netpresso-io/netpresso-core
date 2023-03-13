@@ -1,7 +1,7 @@
 version: "0.1"
 services:
   influxdb:
-    image: influxdb:1.8-alpine
+    image: influxdb:2.6.1-alpine
     container_name: influxdb
     restart: always
     environment:
@@ -13,25 +13,25 @@ services:
     volumes:
       - influxdb_data:/var/lib/influxdb
 
-  speedtest:
-    image: netpresso/netpresso-core
-    container_name: speed-test
-    restart: always
-    links:
-      - "influxdb"
+#  speedtest:
+#    image: netpresso/netpresso-core
+#    container_name: speed-test
+#    restart: always
+#    links:
+#      - "influxdb"
 
   web:
-    image: netpresso/netpresso-ui
+    image: netpresso/netpresso-ui:0.1
     container_name: web-ui
     restart: always
     depends_on:
       - influxdb
-      - speedtest
+#      - speedtest
     ports:
       - "3000:3000"
     links:
       - "influxdb"
-      - "speedtest:speed-test-service"
+#      - "speedtest:speed-test-service"
 
 volumes:
   influxdb_data: {}
