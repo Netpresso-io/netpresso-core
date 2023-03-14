@@ -20,6 +20,8 @@ services:
     image: netpresso/netpresso-core:0.1
     container_name: speed-test
     restart: always
+    depends_on:
+      - influxdb
     links:
       - "influxdb"
 
