@@ -12,5 +12,5 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag netpresso/netpresso-core:test$(date +%s)
+    - name: Build speed-test Docker image
+      run: docker build ./speed-test/client --file Dockerfile --tag netpresso/netpresso-core:test$(date +%s)
