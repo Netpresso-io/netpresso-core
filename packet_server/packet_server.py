@@ -6,8 +6,8 @@ app = Flask(__name__)
 
 @app.route("/top-dns")
 def home():
-    return PacketUtils.get_top_dns(request.args.get("file_name"))
+    return PacketUtils.get_top_dns(request.args.get("file_name"), int(request.args.get("packet_amount")))
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=3000)
+    app.run(debug=True, port=5000)

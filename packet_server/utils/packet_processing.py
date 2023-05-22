@@ -15,14 +15,14 @@ def process_dns_packets(packet_list):
     return dns_count.most_common(5)
 
 
-def extract_pcap(file_name):
-    pkts = rdpcap(file_name)
+def extract_pcap(file_name, packet_amount):
+    pkts = rdpcap(file_name, packet_amount)
     return pkts
 
 
 class PacketUtils:
     @staticmethod
-    def get_top_dns(file_name):
-        packet_list = extract_pcap(file_name)
+    def get_top_dns(file_name, packet_amount):
+        packet_list = extract_pcap(f'resources/{file_name}', packet_amount)
         top_dns = process_dns_packets(packet_list)
         return top_dns
