@@ -1,3 +1,5 @@
+import sys
+
 import scapy.config
 from scapy.all import *
 import pandas as pd
@@ -8,6 +10,7 @@ from scapy.layers.l2 import ARP
 from scapy.layers.inet6 import IP
 from IPython.display import display
 import socket
+from datetime import datetime
 
 # Open the pcap file
 file_name = r'test.pcap'
@@ -117,39 +120,51 @@ def calculate_bandwidth_usage(packet_list, endpoints):
 
     # Initialize endpoint_usage dictionary
     for endpoint in endpoints:
-        endpoint_usage[endpoint] = {'upload': 0, 'download': 0, 'last_timestamp': None}
+        endpoint_usage[endpoint] = {'upload': 0, 'download': 0, 'last_timestamp': None, "first_timestamp": None}
 
     # Calculate upload and download usage for each endpoint
     for pkt in packet_list:
         if IP in pkt:
             src_ip = pkt[IP].src
             dst_ip = pkt[IP].dst
+
             if src_ip in endpoints:
                 pkt_size = len(pkt)
                 timestamp = pkt.time
                 if endpoint_usage[src_ip]['last_timestamp'] is not None:
-                    # time_diff = timestamp - endpoint_usage[src_ip]['last_timestamp']
-                    endpoint_usage[src_ip]['upload'] += pkt_size
-                    endpoint_usage[src_ip]['last_timestamp'] = timestamp
+                    endpoint_usage[src_ip]['upload'] += pkt_size * 8
+                    endpoint_usage[src_ip]['last_timestamp'] = max(endpoint_usage[src_ip]['last_timestamp'], timestamp)
                 else:
                     endpoint_usage[src_ip]['last_timestamp'] = timestamp
+
+                if endpoint_usage[src_ip]['first_timestamp'] is not None:
+                    endpoint_usage[src_ip]['upload'] += pkt_size * 8
+                    endpoint_usage[src_ip]['first_timestamp'] = min(endpoint_usage[src_ip]['first_timestamp'], timestamp)
+                else:
+                    endpoint_usage[src_ip]['first_timestamp'] = timestamp
+
             if dst_ip in endpoints:
                 pkt_size = len(pkt)
                 timestamp = pkt.time
                 if endpoint_usage[dst_ip]['last_timestamp'] is not None:
-                    # time_diff = timestamp - endpoint_usage[dst_ip]['last_timestamp']
-                    endpoint_usage[dst_ip]['download'] += pkt_size
-                    endpoint_usage[dst_ip]['last_timestamp'] = timestamp
+                    endpoint_usage[dst_ip]['download'] += pkt_size * 8
+                    endpoint_usage[dst_ip]['last_timestamp'] = max(endpoint_usage[dst_ip]['last_timestamp'], timestamp)
                 else:
                     endpoint_usage[dst_ip]['last_timestamp'] = timestamp
+
+                if endpoint_usage[dst_ip]['first_timestamp'] is not None:
+                    endpoint_usage[dst_ip]['download'] += pkt_size * 8
+                    endpoint_usage[dst_ip]['first_timestamp'] = min(endpoint_usage[dst_ip]['first_timestamp'], timestamp)
+                else:
+                    endpoint_usage[dst_ip]['first_timestamp'] = timestamp
 
     # Calculate upload and download speeds for each endpoint
     for endpoint in endpoint_usage:
         usage = endpoint_usage[endpoint]
-        if usage['last_timestamp'] is not None:
-            time_diff = float(usage['last_timestamp'] - packet_list[0].time)
-            upload_speed = usage['upload'] / time_diff
-            download_speed = usage['download'] / time_diff
+        if usage['last_timestamp'] is not None and usage['first_timestamp'] is not None:
+            time_diff = float(usage['last_timestamp'] - usage['first_timestamp'])
+            upload_speed = usage['upload'] / time_diff / 1024
+            download_speed = usage['download'] / time_diff / 1024
             endpoint_usage[endpoint] = {'upload_speed': upload_speed, 'download_speed': download_speed}
         else:
             endpoint_usage[endpoint] = {'upload_speed': 0, 'download_speed': 0}
@@ -158,20 +173,21 @@ def calculate_bandwidth_usage(packet_list, endpoints):
 
 
 packet_list = extract_pcap(file_name)
-top_dns = get_top_dns(packet_list)
-print("Top 5 DNS (or more if duplicates): ")
-print(top_dns)
+# top_dns = get_top_dns(packet_list)
+# print("Top 5 DNS (or more if duplicates): ")
+# print(top_dns)
 
 
 endpoint_list = get_endpoints(packet_list)
 print("Endpoints:\n", endpoint_list)
 
-endpoint_usage = calculate_bandwidth_usage(packet_list, endpoint_list)
+endpoint_usage = {}
+endpoint_usage.update(calculate_bandwidth_usage(packet_list, endpoint_list))
 print("Bandwidth usage: ")
 for endpoint, data in endpoint_usage.items():
     print(endpoint)
-    print('Upload speed:', data['upload_speed'])
-    print('Download speed:', data['download_speed'])
+    print('Upload speed:', data['upload_speed'], 'Kbps')
+    print('Download speed:', data['download_speed'], 'Kbps')
     print('---')
 
 
