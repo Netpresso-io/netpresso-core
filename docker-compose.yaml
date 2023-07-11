@@ -25,18 +25,18 @@ services:
     links:
       - "influxdb"
 
-  web:
-    image: netpresso/netpresso-ui:0.5
-    container_name: web-ui
-    restart: always
-    depends_on:
-      - influxdb
-      - speedtest
-    ports:
-      - "3000:3000"
-    links:
-      - "influxdb"
-      - "speedtest"
+#  web:
+#    image: netpresso/netpresso-ui:0.5
+#    container_name: web-ui
+#    restart: always
+#    depends_on:
+#      - influxdb
+#      - speedtest
+#    ports:
+#      - "3000:3000"
+#    links:
+#      - "influxdb"
+#      - "speedtest"
 
 volumes:
   influxdb_data: {}
