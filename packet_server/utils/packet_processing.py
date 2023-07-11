@@ -220,3 +220,4 @@ class PacketUtils:
                         domain_name = pkt[DNS].getlayer("DNSQR").qname.decode('utf-8')
                         dns_count[domain_name] += 1
         return dns_count.most_common(5)
+

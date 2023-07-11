@@ -5,7 +5,6 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-
 @app.route("/top-dns")
 def top_dns():
     packet_amount = request.args.get("packet_amount")
@@ -33,8 +32,6 @@ def dashboard():
         "top_dns": PacketUtils.process_dns_packets(packet_list)
     }
     return res
-
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
