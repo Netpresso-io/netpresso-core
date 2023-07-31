@@ -118,4 +118,3 @@ class PacketUtils:
         packet_list = extract_pcap(f'resources/{file_name}', packet_amount)
         endpoints = get_endpoints(packet_list)
         return calculate_bandwidth_usage(packet_list, endpoints)
-

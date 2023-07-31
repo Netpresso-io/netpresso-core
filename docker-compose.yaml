@@ -27,7 +27,6 @@ services:
     links:
       - "influxdb"
 
-
   packetserver:
     build:
       context: ./packet_server
