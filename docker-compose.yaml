@@ -17,7 +17,9 @@ services:
       - influxdb_data:/var/lib/influxdb
 
   speedtest:
-    image: netpresso/netpresso-core:0.1
+    build:
+      context: ./speed-test/client
+      dockerfile: Dockerfile
     container_name: speed-test
     restart: always
     depends_on:
@@ -25,8 +27,18 @@ services:
     links:
       - "influxdb"
 
+
+  packetserver:
+    build:
+      context: ./packet_server
+      dockerfile: Dockerfile
+    container_name: packet-server
+    restart: always
+    ports:
+      - '5000:5000'
+
   web:
-    image: netpresso/netpresso-ui:0.5
+    image: netpresso/netpresso-ui@sha256:0fea5ae7816050a718cd33eb5cfe6fef7218926c2aeb84a092cfe6e60860ce6c
     container_name: web-ui
     restart: always
     depends_on:
@@ -37,6 +49,7 @@ services:
     links:
       - "influxdb"
       - "speedtest"
+      - "packetserver"
 
 volumes:
   influxdb_data: {}
