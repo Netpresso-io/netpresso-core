@@ -15,7 +15,6 @@ services:
       - '8086:8086'
     volumes:
       - influxdb_data:/var/lib/influxdb
-
   speedtest:
     build:
       context: ./speed-test/client
@@ -26,7 +25,6 @@ services:
       - influxdb
     links:
       - "influxdb"
-
   packetserver:
     build:
       context: ./packet_server
@@ -35,7 +33,6 @@ services:
     restart: always
     ports:
       - '5000:5000'
-
   web:
     image: netpresso/netpresso-ui@sha256:0fea5ae7816050a718cd33eb5cfe6fef7218926c2aeb84a092cfe6e60860ce6c
     container_name: web-ui
@@ -49,6 +46,7 @@ services:
       - "influxdb"
       - "speedtest"
       - "packetserver"
-
 volumes:
   influxdb_data: {}
+web:
+  image: netpresso/netpresso-ui:9f9d6a8
