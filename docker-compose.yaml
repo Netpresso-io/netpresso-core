@@ -34,7 +34,7 @@ services:
     ports:
       - '5000:5000'
   web:
-    image: netpresso/netpresso-ui:eb4fce3
+    image: netpresso/netpresso-ui:621f96a
     container_name: web-ui
     restart: always
     depends_on:
