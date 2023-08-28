@@ -1,5 +1,4 @@
 from flask import Flask, request
-from utils.packet_processing import PacketUtils
 from utils.db_processing import DBUtils
 from flask_cors import CORS
 
@@ -8,23 +7,38 @@ CORS(app)
 
 DBUtilsInstance = DBUtils()
 
-@app.route("/top-dns")
+@app.route("/top-dns", methods=["GET"])
 def top_dns():
     return DBUtilsInstance.get_top_dns()
-    # packet_amount = request.args.get("packet_amount")
-    # if packet_amount is None:
-    #     packet_amount = 7500
-    # return PacketUtils.get_top_dns(request.args.get("file_name"), int(packet_amount))
 
 
-@app.route("/bandwidth-usage")
+@app.route("/bandwidth-usage", methods=["GET"])
 def bandwidth_usage():
     return DBUtilsInstance.get_bandwidth_usage()
-    # packet_amount = request.args.get("packet_amount")
-    # if packet_amount is None:
-    #     packet_amount = 7500
-    # return PacketUtils.get_bandwidth_usage(request.args.get("file_name"), int(packet_amount))
-  
+
+
+@app.route("/get-alerts", methods=["GET"])
+def get_alerts():
+    return DBUtilsInstance.get_alerts()
+
+
+@app.route("/get-fired-alerts", methods=["GET"])
+def get_fired_alerts():
+    return DBUtilsInstance.get_fired_alerts()
+
+
+@app.route("/add-alert", methods=["POST"])
+def add_alert():
+    new_alert = request.get_json()
+    return DBUtilsInstance.add_alert(new_alert)
+
+
+@app.route("/resolve-alert", methods=["POST"])
+def resolve_alert():
+    body = request.get_json()
+    return DBUtilsInstance.resolve_alert(body["alert_id"])
+
+
   
 if __name__ == "__main__":
     DBUtilsInstance.connect()
