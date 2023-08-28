@@ -1,12 +1,17 @@
+import queue
+
 from scapy.all import *
 from collections import Counter
 from scapy.layers.dns import DNS
 from scapy.layers.inet6 import IP
 from scapy.layers.l2 import ARP, Ether, srp
 import socket
+import threading
 
 packet_buff = []
 ethernet_interface = "eth2"  # Ruby needs to make sure this is the interface name
+dns_queue = queue.Queue()
+bandwidth_queue = queue.Queue()
 
 
 def process_dns_packets(packet_list):
@@ -63,6 +68,7 @@ def get_endpoints_old(packet_list):
 
 
 def get_endpoints():
+    res = []
     ip_range = "192.168.1.0/24"  # adjust according to network, '24' stands for 24bit subnet
 
     # Create an ARP request packet
@@ -82,6 +88,9 @@ def get_endpoints():
         ip_address = received.psrc
         mac_address = received.hwsrc
         hostname = get_hostname(ip_address)
+        res.append((hostname, ip_address, mac_address))
+
+    return res
 
 
 def get_hostname(ip_address):
@@ -129,6 +138,19 @@ def calculate_bandwidth_usage(packet_list, endpoints):
     return endpoint_usage
 
 
+def thread_function():
+    packet_list = []
+    packet_list.extend(packet_buff)
+    packet_buff.clear()
+
+    top_dns = process_dns_packets(packet_list)
+    dns_queue.put(top_dns)
+
+    endpoints = get_endpoints()
+    bandwidth_usage = calculate_bandwidth_usage(packet_list, endpoints)
+    bandwidth_queue.put(bandwidth_usage)
+
+
 class PacketUtils:
     @staticmethod
     def get_top_dns(file_name, packet_amount):
@@ -141,3 +163,15 @@ class PacketUtils:
         packet_list = extract_pcap(f'resources/{file_name}', packet_amount)
         endpoints = get_endpoints(packet_list)
         return calculate_bandwidth_usage(packet_list, endpoints)
+
+
+if __name__ == "__main__":
+    thread1 = threading.Thread(target=capture_packets)
+    thread2 = threading.Thread(target=thread_function)
+
+    thread1.start()
+    time.sleep(20)
+    thread2.start()
+
+    thread2.join()
+    print(dns_queue.get(), bandwidth_queue.get())
