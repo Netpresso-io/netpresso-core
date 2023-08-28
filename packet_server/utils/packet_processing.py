@@ -2,6 +2,11 @@ from scapy.all import *
 from collections import Counter
 from scapy.layers.dns import DNS
 from scapy.layers.inet6 import IP
+from scapy.layers.l2 import ARP, Ether, srp
+import socket
+
+packet_buff = []
+ethernet_interface = "eth2"  # Ruby needs to make sure this is the interface name
 
 
 def process_dns_packets(packet_list):
@@ -21,7 +26,15 @@ def extract_pcap(file_name, packet_amount):
     return pkts
 
 
-def get_endpoints(packet_list):
+def capture_packets():  # needs to run constantly by thread
+    sniff(iface=ethernet_interface, prn=packet_handler)
+
+
+def packet_handler(packet):
+    packet_buff.append((packet, datetime.now().time()))
+
+
+def get_endpoints_old(packet_list):
     endpoints = set()
     network_address = None
     subnet_mask = None
@@ -49,59 +62,69 @@ def get_endpoints(packet_list):
     return list(endpoints)
 
 
+def get_endpoints():
+    ip_range = "192.168.1.0/24"  # adjust according to network, '24' stands for 24bit subnet
+
+    # Create an ARP request packet
+    arp = ARP(pdst=ip_range)
+
+    # Create an Ethernet frame to encapsulate the ARP request
+    ether = Ether(dst="ff:ff:ff:ff:ff:ff")
+
+    # Combine Ethernet frame and ARP request
+    packet = ether / arp
+
+    # Send the packet and receive responses
+    result = srp(packet, timeout=2, verbose=False)[0]
+
+    # Process the responses to get endpoint information
+    for sent, received in result:
+        ip_address = received.psrc
+        mac_address = received.hwsrc
+        hostname = get_hostname(ip_address)
+
+
+def get_hostname(ip_address):
+    try:
+        hostname = socket.gethostbyaddr(ip_address)[0]
+        return hostname
+    except socket.herror:
+        return "Unknown"
+
+
 def calculate_bandwidth_usage(packet_list, endpoints):
     endpoint_usage = {}
 
     # Initialize endpoint_usage dictionary
     for endpoint in endpoints:
-        endpoint_usage[endpoint] = {'upload': 0, 'download': 0, 'last_timestamp': None, "first_timestamp": None}
+        endpoint_usage[endpoint] = {'total_upload': 0, 'total_download': 0, 'upload_time': 0, 'download_time': 0}
 
     # Calculate upload and download usage for each endpoint
     for pkt in packet_list:
-        if IP in pkt:
-            src_ip = pkt[IP].src
-            dst_ip = pkt[IP].dst
+        if IP in pkt[0]:
+            src_ip = pkt[0][IP].src
+            dst_ip = pkt[0][IP].dst
 
             if src_ip in endpoints:
-                pkt_size = len(pkt)
-                timestamp = pkt.time
-                if endpoint_usage[src_ip]['last_timestamp'] is not None:
-                    endpoint_usage[src_ip]['upload'] += pkt_size * 8
-                    endpoint_usage[src_ip]['last_timestamp'] = max(endpoint_usage[src_ip]['last_timestamp'], timestamp)
-                else:
-                    endpoint_usage[src_ip]['last_timestamp'] = timestamp
-
-                if endpoint_usage[src_ip]['first_timestamp'] is not None:
-                    endpoint_usage[src_ip]['upload'] += pkt_size * 8
-                    endpoint_usage[src_ip]['first_timestamp'] = min(endpoint_usage[src_ip]['first_timestamp'], timestamp)
-                else:
-                    endpoint_usage[src_ip]['first_timestamp'] = timestamp
+                pkt_size = len(pkt[0])
+                endpoint_usage[src_ip]['upload_time'] += (pkt[1] - pkt[0].time)
+                endpoint_usage[src_ip]['total_upload'] += pkt_size * 8
 
             if dst_ip in endpoints:
-                pkt_size = len(pkt)
-                timestamp = pkt.time
-                if endpoint_usage[dst_ip]['last_timestamp'] is not None:
-                    endpoint_usage[dst_ip]['download'] += pkt_size * 8
-                    endpoint_usage[dst_ip]['last_timestamp'] = max(endpoint_usage[dst_ip]['last_timestamp'], timestamp)
-                else:
-                    endpoint_usage[dst_ip]['last_timestamp'] = timestamp
-
-                if endpoint_usage[dst_ip]['first_timestamp'] is not None:
-                    endpoint_usage[dst_ip]['download'] += pkt_size * 8
-                    endpoint_usage[dst_ip]['first_timestamp'] = min(endpoint_usage[dst_ip]['first_timestamp'], timestamp)
-                else:
-                    endpoint_usage[dst_ip]['first_timestamp'] = timestamp
+                pkt_size = len(pkt[0])
+                endpoint_usage[dst_ip]['download_time'] += (pkt[1] - pkt[0].time)
+                endpoint_usage[dst_ip]['total_download'] += pkt_size * 8
 
     # Calculate upload and download speeds for each endpoint
     for endpoint in endpoint_usage:
         usage = endpoint_usage[endpoint]
-        if usage['last_timestamp'] is not None and usage['first_timestamp'] is not None:
-            time_diff = float(usage['last_timestamp'] - usage['first_timestamp'])
-            upload_speed = usage['upload'] / time_diff / 1024
-            download_speed = usage['download'] / time_diff / 1024
-            endpoint_usage[endpoint] = {'upload_speed': upload_speed, 'download_speed': download_speed}
-        else:
-            endpoint_usage[endpoint] = {'upload_speed': 0, 'download_speed': 0}
+        total_upload = usage['total_upload']
+        total_download = usage['total_download']
+        upload_time = usage['upload_time']
+        download_time = usage['download_time']
+
+        endpoint_usage[endpoint] = \
+            {'upload_speed': total_upload / upload_time / 1024, 'download_speed': total_download / download_time / 1024}
 
     return endpoint_usage
 
