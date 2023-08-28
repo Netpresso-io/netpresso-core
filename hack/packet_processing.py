@@ -13,7 +13,7 @@ import socket
 from datetime import datetime
 
 # Open the pcap file
-file_name = r'test.pcap'
+file_name = r'bigFlows.pcap'
 df = pd.DataFrame()
 data_list = []
 
@@ -173,9 +173,9 @@ def calculate_bandwidth_usage(packet_list, endpoints):
 
 
 packet_list = extract_pcap(file_name)
-# top_dns = get_top_dns(packet_list)
-# print("Top 5 DNS (or more if duplicates): ")
-# print(top_dns)
+top_dns = get_top_dns(packet_list)
+print("Top 5 DNS (or more if duplicates): ")
+print(top_dns)
 
 
 endpoint_list = get_endpoints(packet_list)
