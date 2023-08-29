@@ -109,7 +109,6 @@ def calculate_bandwidth_usage(packet_list, endpoints):
     for endpoint in endpoints:
         endpoint_usage[endpoint] = {'total_upload': 0, 'total_download': 0, 'upload_time': 0, 'download_time': 0}
     print("endpoint: ", endpoints)
-    print("packet list check: " , packet_list)
     # Calculate upload and download usage for each endpoint
     for pkt in packet_list:
         if IP in pkt[0]:
@@ -133,6 +132,7 @@ def calculate_bandwidth_usage(packet_list, endpoints):
         total_download = usage['total_download']
         upload_time = usage['upload_time']
         download_time = usage['download_time']
+
 
         endpoint_usage[endpoint] = \
             {'upload_speed': total_upload / upload_time / 1024, 'download_speed': total_download / download_time / 1024}
