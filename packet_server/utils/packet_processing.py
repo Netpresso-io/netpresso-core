@@ -70,7 +70,7 @@ def get_endpoints_old(packet_list):
 
 def get_endpoints():
     res = []
-    ip_range = "192.168.0.1/24"  # adjust according to network, '24' stands for 24bit subnet
+    ip_range = "192.162.0.1/20"  # adjust according to network, '24' stands for 24bit subnet
 
     # Create an ARP request packet
     arp = ARP(pdst=ip_range)
@@ -82,7 +82,7 @@ def get_endpoints():
     packet = ether / arp
 
     # Send the packet and receive responses
-    result = srp(packet, timeout=2, verbose=False)[0]
+    result = srp(packet, timeout=2, verbose=False, iface='Intel(R) Wi-Fi 6 AX201 160MHz')[0]
 
     # Process the responses to get endpoint information
     for sent, received in result:
@@ -128,6 +128,7 @@ def calculate_bandwidth_usage(packet_list, endpoints):
                 endpoint_usage[dst_ip]['download_time'] += float(pkt[1] - pkt[0].time)
                 endpoint_usage[dst_ip]['total_download'] += float(pkt_size * 8)
 
+    print("endpoint_usage : ", endpoint_usage)
     # Calculate upload and download speeds for each endpoint
     for endpoint in endpoint_usage:
         usage = endpoint_usage[endpoint]
@@ -135,6 +136,11 @@ def calculate_bandwidth_usage(packet_list, endpoints):
         total_download = usage['total_download']
         upload_time = float(usage['upload_time'])
         download_time = float(usage['download_time'])
+        print("total_upload:", total_upload)
+        print("upload time: " ,upload_time)
+        print("total_download:", total_download)
+        print("download_time:", download_time)
+
 
 
         endpoint_usage[endpoint] = \
@@ -176,7 +182,7 @@ if __name__ == "__main__":
     thread2 = threading.Thread(target=thread_function)
 
     thread1.start()
-    time.sleep(20)
+    time.sleep(5)
     thread2.start()
 
     thread2.join()
