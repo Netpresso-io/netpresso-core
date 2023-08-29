@@ -106,7 +106,8 @@ def calculate_bandwidth_usage(packet_list, endpoints):
 
     # Initialize endpoint_usage dictionary
     for endpoint in endpoints:
-        endpoint_usage[endpoint] = {'total_upload': 0, 'total_download': 0, 'upload_time': 0, 'download_time': 0}
+        endpoint_usage[endpoint] = \
+            {'total_upload': float(0), 'total_download': float(0), 'upload_time': float(0), 'download_time': float(0)}
 
     # Calculate upload and download usage for each endpoint
     for pkt in packet_list:
@@ -116,24 +117,25 @@ def calculate_bandwidth_usage(packet_list, endpoints):
 
             if src_ip in endpoints:
                 pkt_size = len(pkt[0])
-                endpoint_usage[src_ip]['upload_time'] += (pkt[1] - pkt[0].time)
-                endpoint_usage[src_ip]['total_upload'] += pkt_size * 8
+                endpoint_usage[src_ip]['upload_time'] += float(pkt[1] - pkt[0].time)
+                endpoint_usage[src_ip]['total_upload'] += float(pkt_size * 8)
 
             if dst_ip in endpoints:
                 pkt_size = len(pkt[0])
-                endpoint_usage[dst_ip]['download_time'] += (pkt[1] - pkt[0].time)
-                endpoint_usage[dst_ip]['total_download'] += pkt_size * 8
+                endpoint_usage[dst_ip]['download_time'] += float(pkt[1] - pkt[0].time)
+                endpoint_usage[dst_ip]['total_download'] += float(pkt_size * 8)
 
     # Calculate upload and download speeds for each endpoint
     for endpoint in endpoint_usage:
         usage = endpoint_usage[endpoint]
         total_upload = usage['total_upload']
         total_download = usage['total_download']
-        upload_time = usage['upload_time']
-        download_time = usage['download_time']
+        upload_time = float(usage['upload_time'])
+        download_time = float(usage['download_time'])
 
         endpoint_usage[endpoint] = \
-            {'upload_speed': total_upload / upload_time / 1024, 'download_speed': total_download / download_time / 1024}
+            {'upload_speed': float(total_upload / upload_time / 1024),
+             'download_speed': float(total_download / download_time / 1024)}
 
     return endpoint_usage
 
