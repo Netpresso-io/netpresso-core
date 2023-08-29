@@ -9,7 +9,7 @@ import socket
 import threading
 
 packet_buff = []
-ethernet_interface = "eth2"  # Ruby needs to make sure this is the interface name
+ethernet_interface = "Realtek USB FE Family Controller"  # Ruby needs to make sure this is the interface name
 dns_queue = queue.Queue()
 bandwidth_queue = queue.Queue()
 
@@ -69,7 +69,7 @@ def get_endpoints_old(packet_list):
 
 def get_endpoints():
     res = []
-    ip_range = "192.168.1.0/24"  # adjust according to network, '24' stands for 24bit subnet
+    ip_range = "192.168.0.1/24"  # adjust according to network, '24' stands for 24bit subnet
 
     # Create an ARP request packet
     arp = ARP(pdst=ip_range)
@@ -107,7 +107,8 @@ def calculate_bandwidth_usage(packet_list, endpoints):
     # Initialize endpoint_usage dictionary
     for endpoint in endpoints:
         endpoint_usage[endpoint] = {'total_upload': 0, 'total_download': 0, 'upload_time': 0, 'download_time': 0}
-
+    print("endpoint: ", endpoints)
+    print("packet list check: " , packet_list)
     # Calculate upload and download usage for each endpoint
     for pkt in packet_list:
         if IP in pkt[0]:
