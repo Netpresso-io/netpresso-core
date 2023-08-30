@@ -10,7 +10,7 @@ import threading
 
 packet_buff = []
 
-ethernet_interface = "Realtek USB FE Family Controller"  # Ruby needs to make sure this is the interface name
+ethernet_interface = "Intel(R) Wi-Fi 6 AX201 160MHz"  # Ruby needs to make sure this is the interface name
 
 dns_queue = queue.Queue()
 bandwidth_queue = queue.Queue()
@@ -86,7 +86,7 @@ def get_endpoints():
     packet = ether / arp
 
     # Send the packet and receive responses
-    result = srp(packet, timeout=2, verbose=False, iface='Realtek USB FE Family Controller')[0]
+    result = srp(packet, timeout=2, verbose=False, iface='Intel(R) Wi-Fi 6 AX201 160MHz')[0]
 
     # Process the responses to get endpoint information
     for sent, received in result:
@@ -180,28 +180,12 @@ def thread_function():
     bandwidth_queue.put(bandwidth_usage)
 
 
-class PacketUtils:
-    @staticmethod
-    def get_top_dns(file_name, packet_amount):
-        packet_list = extract_pcap(f'resources/{file_name}', packet_amount)
-        top_dns = process_dns_packets(packet_list)
-        return top_dns
-
-    @staticmethod
-    def get_bandwidth_usage(file_name, packet_amount):
-        packet_list = extract_pcap(f'resources/{file_name}', packet_amount)
-        endpoints = get_endpoints(packet_list)
-        return calculate_bandwidth_usage(packet_list, endpoints)
-
-
 if __name__ == "__main__":
     thread1 = threading.Thread(target=capture_packets)
     thread2 = threading.Thread(target=thread_function)
 
     thread1.start()
-
-    time.sleep(10)
-
+    time.sleep(60)
     thread2.start()
 
     thread2.join()
