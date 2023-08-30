@@ -9,6 +9,7 @@ import socket
 import threading
 
 packet_buff = []
+
 ethernet_interface = "Realtek USB FE Family Controller"  # Ruby needs to make sure this is the interface name
 
 dns_queue = queue.Queue()
@@ -37,7 +38,7 @@ def capture_packets():  # needs to run constantly by thread
 
 
 def packet_handler(packet):
-    packet_buff.append((packet, datetime.now().time()))
+    packet_buff.append((packet, datetime.now().timestamp()))
 
 
 def get_endpoints_old(packet_list):
@@ -70,7 +71,9 @@ def get_endpoints_old(packet_list):
 
 def get_endpoints():
     res = []
+
     ip_range = "192.162.0.1/20"  # adjust according to network, '24' stands for 24bit subnet
+
 
     # Create an ARP request packet
     arp = ARP(pdst=ip_range)
@@ -91,6 +94,7 @@ def get_endpoints():
         hostname = get_hostname(ip_address)
         res.append((hostname, ip_address, mac_address))
 
+    print(res)
     return res
 
 
@@ -108,30 +112,36 @@ def calculate_bandwidth_usage(packet_list, endpoints):
     # Initialize endpoint_usage dictionary
     for endpoint in endpoints:
 
-        endpoint_usage[endpoint] = \
-            {'total_upload': float(0), 'total_download': float(0), 'upload_time': float(0), 'download_time': float(0)}
+        endpoint_usage[endpoint[1]] = \
+            {'total_upload': float(0), 'total_download': float(0), 'upload_time': 0, 'download_time': 0}
+
 
 
     # Calculate upload and download usage for each endpoint
+    # print(packet_list)
     for pkt in packet_list:
         if IP in pkt[0]:
             src_ip = pkt[0][IP].src
             dst_ip = pkt[0][IP].dst
 
-            if src_ip in endpoints:
-                pkt_size = len(pkt[0])
-                endpoint_usage[src_ip]['upload_time'] += float(pkt[1] - pkt[0].time)
-                endpoint_usage[src_ip]['total_upload'] += float(pkt_size * 8)
+            for value in endpoints:
+                if src_ip == value[1]:
+                    pkt_size = len(pkt[0])
+                    # print(pkt[1], pkt[0].time)
+                    endpoint_usage[src_ip]['upload_time'] += (float(pkt[1]) - float(pkt[0].time))
+                    endpoint_usage[src_ip]['total_upload'] += float(pkt_size * 8)
 
-            if dst_ip in endpoints:
-                pkt_size = len(pkt[0])
-                endpoint_usage[dst_ip]['download_time'] += float(pkt[1] - pkt[0].time)
-                endpoint_usage[dst_ip]['total_download'] += float(pkt_size * 8)
+            for value in endpoints:
+                if dst_ip == value[1]:
+                    pkt_size = len(pkt[0])
+                    endpoint_usage[dst_ip]['download_time'] += (float(pkt[1]) - float(pkt[0].time))
+                    endpoint_usage[dst_ip]['total_download'] += float(pkt_size * 8)
 
     print("endpoint_usage : ", endpoint_usage)
     # Calculate upload and download speeds for each endpoint
     for endpoint in endpoint_usage:
         usage = endpoint_usage[endpoint]
+
         total_upload = usage['total_upload']
         total_download = usage['total_download']
         upload_time = float(usage['upload_time'])
@@ -142,10 +152,15 @@ def calculate_bandwidth_usage(packet_list, endpoints):
         print("download_time:", download_time)
 
 
+        if usage['upload_time'] != 0.0:
+            total_upload = usage['total_upload']
+            upload_time = (usage['upload_time'])
+            endpoint_usage[endpoint] = {'upload_speed': float(total_upload / upload_time / 1024)}
 
-        endpoint_usage[endpoint] = \
-            {'upload_speed': float(total_upload / upload_time / 1024),
-             'download_speed': float(total_download / download_time / 1024)}
+        if usage['download_time'] != 0.0:
+            total_download = usage['total_download']
+            download_time = (usage['download_time'])
+            endpoint_usage[endpoint] = {'download_speed': float(total_download / download_time / 1024)}
 
     return endpoint_usage
 
@@ -182,7 +197,9 @@ if __name__ == "__main__":
     thread2 = threading.Thread(target=thread_function)
 
     thread1.start()
+
     time.sleep(5)
+
     thread2.start()
 
     thread2.join()
