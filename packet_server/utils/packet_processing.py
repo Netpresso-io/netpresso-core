@@ -23,8 +23,9 @@ def process_dns_packets(packet_list):
             for dns in pkt[0][DNS].an:
                 if dns.type == 1 or dns.type == 28 \
                         and pkt[0][DNS].getlayer("DNSQR") is not None:
-                    domain_name = pkt[0][DNS].getlayer("DNSQR").qname.decode('utf-8')
-                    dns_count[domain_name] += 1
+                    if pkt[0][DNS].getlayer("DNSQR").qname is not None:
+                        domain_name = pkt[0][DNS].getlayer("DNSQR").qname.decode('utf-8')
+                        dns_count[domain_name] += 1
     return dns_count.most_common(5)
 
 
@@ -72,11 +73,11 @@ def get_endpoints_old(packet_list):
 def get_endpoints():
     res = []
 
-    ip_range = "192.162.0.1/20"  # adjust according to network, '24' stands for 24bit subnet
+    ip_range = "192.168.0.1/24"  # adjust according to network, '24' stands for 24bit subnet
 
 
     # Create an ARP request packet
-    arp = ARP(pdst=ip_range)
+    arp = ARP(op=1, pdst=ip_range)
 
     # Create an Ethernet frame to encapsulate the ARP request
     ether = Ether(dst="ff:ff:ff:ff:ff:ff")
@@ -85,14 +86,17 @@ def get_endpoints():
     packet = ether / arp
 
     # Send the packet and receive responses
-    result = srp(packet, timeout=2, verbose=False, iface='Intel(R) Wi-Fi 6 AX201 160MHz')[0]
+    result = srp(packet, timeout=2, verbose=False, iface='Realtek USB FE Family Controller')[0]
 
     # Process the responses to get endpoint information
     for sent, received in result:
-        ip_address = received.psrc
-        mac_address = received.hwsrc
+        ip_address = received[ARP].psrc
+        mac_address = received[ARP].hwsrc
         hostname = get_hostname(ip_address)
         res.append((hostname, ip_address, mac_address))
+
+        # if received.haslayer(ARP):
+        #     print("test", received[ARP].psrc)
 
     print(res)
     return res
@@ -127,7 +131,6 @@ def calculate_bandwidth_usage(packet_list, endpoints):
             for value in endpoints:
                 if src_ip == value[1]:
                     pkt_size = len(pkt[0])
-                    # print(pkt[1], pkt[0].time)
                     endpoint_usage[src_ip]['upload_time'] += (float(pkt[1]) - float(pkt[0].time))
                     endpoint_usage[src_ip]['total_upload'] += float(pkt_size * 8)
 
@@ -137,7 +140,7 @@ def calculate_bandwidth_usage(packet_list, endpoints):
                     endpoint_usage[dst_ip]['download_time'] += (float(pkt[1]) - float(pkt[0].time))
                     endpoint_usage[dst_ip]['total_download'] += float(pkt_size * 8)
 
-    print("endpoint_usage : ", endpoint_usage)
+    # print("endpoint_usage : ", endpoint_usage)
     # Calculate upload and download speeds for each endpoint
     for endpoint in endpoint_usage:
         usage = endpoint_usage[endpoint]
@@ -146,11 +149,10 @@ def calculate_bandwidth_usage(packet_list, endpoints):
         total_download = usage['total_download']
         upload_time = float(usage['upload_time'])
         download_time = float(usage['download_time'])
-        print("total_upload:", total_upload)
-        print("upload time: " ,upload_time)
-        print("total_download:", total_download)
-        print("download_time:", download_time)
-
+        # print("total_upload:", total_upload)
+        # print("upload time: " ,upload_time)
+        # print("total_download:", total_download)
+        # print("download_time:", download_time)
 
         if usage['upload_time'] != 0.0:
             total_upload = usage['total_upload']
@@ -198,7 +200,7 @@ if __name__ == "__main__":
 
     thread1.start()
 
-    time.sleep(5)
+    time.sleep(10)
 
     thread2.start()
 
