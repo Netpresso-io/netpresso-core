@@ -86,7 +86,7 @@ class AlertsSampler:
             new_access = []
             if len(latest_alert_list) > 0:
                 latest_alert_id = latest_alert_list[0]["_id"]
-                new_access = self._database["TopDNS"].find({"lastModified":{"$gt": latest_alert_id}, "domain": f'{alert["property"].lower()}.com'})
+                new_access = self._database["TopDNS"].find({"lastModified":{"$gt": latest_alert_id}, "domain": f'/{alert["property"].lower()}/'})
             else:
                 new_access = self._database["TopDNS"].find({"domain": f'{alert["property"].lower()}.com'})
             for access in new_access:
