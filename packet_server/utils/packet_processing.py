@@ -1,4 +1,5 @@
 import queue
+import time
 
 from scapy.all import *
 from collections import Counter
@@ -29,7 +30,7 @@ def process_dns_packets(packet_list):
                     if pkt[0][DNS].getlayer("DNSQR").qname is not None:
                         domain_name = pkt[0][DNS].getlayer("DNSQR").qname.decode('utf-8')
                         dns_count[domain_name] += 1
-    return dns_count.most_common(5)
+    return dns_count
 
 
 def extract_pcap(file_name, packet_amount):
@@ -101,7 +102,6 @@ def get_endpoints():
         # if received.haslayer(ARP):
         #     print("test", received[ARP].psrc)
 
-    print(res)
     return res
 
 
@@ -184,7 +184,6 @@ def thread_function():
 
 
 class DB:
-
     def __init__(self):
         self.connection_string = "mongodb+srv://user:TY1VocdoRt1Fgoui@cluster0.9x7j3hh.mongodb.net/?retryWrites=true&w=majority"
         self.client = MongoClient(self.connection_string, server_api=ServerApi('1'))
@@ -197,33 +196,50 @@ class DB:
         except Exception as e:
             print(e)
 
-    def post_bandwidth_usage(self, bandwidth):
-        doc = {}
+    def post_bandwidth_usage(self, bandwidth_usage):
+        for ip, entry in bandwidth_usage:
+            cur_doc = self.database["BandwidthUsage"].find_one({"ip": ip})
+            cur_doc_list = list(cur_doc)
+            download = entry["download_speed"]
+            upload = entry["upload_speed"]
+            if len(cur_doc_list) > 0:
+                download += cur_doc_list[0]["download"]
+                upload += cur_doc_list[0]["upload"]
+            self.database["BandwidthUsage"].update_one({"ip":ip},{"$set": {"download": download, "upload": upload}}, upsert=True)
 
-
-
-    def post_top_dns(self, dns):
-
-
-
-
-
+    def post_top_dns(self, dns_list):
+        for domain, amount in dns_list:
+            cur_doc = self.database["TopDNS"].find_one({"domain": domain})
+            cur_doc_list = list(cur_doc)
+            if len(cur_doc_list) > 0:
+                amount += int(cur_doc_list[0]["amount"])
+            self.database["TopDNS"].update_one({"domain":domain},{"$set": {"amount": amount}}, upsert=True)
 
 
 if __name__ == "__main__":
-
     db = DB()
     db.connect()
 
-
     thread1 = threading.Thread(target=capture_packets)
-    thread2 = threading.Thread(target=thread_function)
+    # thread2 = threading.Thread(target=thread_function)
 
     thread1.start()
 
-    time.sleep(10)
+    time.sleep(5)
 
-    thread2.start()
+    # thread2.start()
 
-    thread2.join()
-    print(dns_queue.get(), bandwidth_queue.get())
+    while True:
+        packet_list = []
+        packet_list.extend(packet_buff)
+        packet_buff.clear()
+
+        top_dns = process_dns_packets(packet_list)
+        db.post_top_dns(top_dns)
+
+        endpoints = get_endpoints()
+        bandwidth_usage = calculate_bandwidth_usage(packet_list, endpoints)
+        db.post_bandwidth_usage(bandwidth_usage)
+
+        time.sleep(15)
+
