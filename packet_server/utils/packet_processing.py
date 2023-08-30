@@ -7,6 +7,9 @@ from scapy.layers.inet6 import IP
 from scapy.layers.l2 import ARP, Ether, srp
 import socket
 import threading
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+
 
 packet_buff = []
 
@@ -180,21 +183,39 @@ def thread_function():
     bandwidth_queue.put(bandwidth_usage)
 
 
-class PacketUtils:
-    @staticmethod
-    def get_top_dns(file_name, packet_amount):
-        packet_list = extract_pcap(f'resources/{file_name}', packet_amount)
-        top_dns = process_dns_packets(packet_list)
-        return top_dns
+class DB:
 
-    @staticmethod
-    def get_bandwidth_usage(file_name, packet_amount):
-        packet_list = extract_pcap(f'resources/{file_name}', packet_amount)
-        endpoints = get_endpoints(packet_list)
-        return calculate_bandwidth_usage(packet_list, endpoints)
+    def __init__(self):
+        self.connection_string = "mongodb+srv://user:TY1VocdoRt1Fgoui@cluster0.9x7j3hh.mongodb.net/?retryWrites=true&w=majority"
+        self.client = MongoClient(self.connection_string, server_api=ServerApi('1'))
+        self.database = self.client["Netpresso"]
+
+    def connect(self):
+        try:
+            self._client.admin.command('ping')
+            print("Pinged your deployment. You successfully connected to MongoDB!")
+        except Exception as e:
+            print(e)
+
+    def post_bandwidth_usage(self, bandwidth):
+        doc = {}
+
+
+
+    def post_top_dns(self, dns):
+
+
+
+
+
 
 
 if __name__ == "__main__":
+
+    db = DB()
+    db.connect()
+
+
     thread1 = threading.Thread(target=capture_packets)
     thread2 = threading.Thread(target=thread_function)
 
