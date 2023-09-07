@@ -29,6 +29,21 @@ def process_dns_packets(packet_list):
     return dns_count.most_common(5)
 
 
+def extract_dns_from_packets(packet_list):
+    dns_list = []
+    for pkt in packet_list:
+        if IP in pkt[0]:
+            ip_address = pkt[0][IP].dst
+            try:
+                host_info = socket.gethostbyaddr(ip_address)
+                print(host_info)
+                dns_list.append(host_info)
+            except socket.herror as e:
+                print(f"Error for IP Address {ip_address}: {e}")
+
+    return dns_list
+
+
 def extract_pcap(file_name, packet_amount):
     pkts = rdpcap(file_name, packet_amount)
     return pkts
