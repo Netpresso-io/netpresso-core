@@ -250,7 +250,7 @@ if __name__ == "__main__":
         packet_list.extend(packet_buff)
         packet_buff.clear()
 
-        top_dns = process_dns_packets(packet_list)
+        top_dns = extract_dns_from_packets(packet_list)
         db.post_top_dns(top_dns)
 
         endpoints = get_endpoints()
