@@ -34,7 +34,7 @@ def process_dns_packets(packet_list):
 
 
 def extract_dns_from_packets(packet_list):
-    dns_list = []
+    dns_list = Counter()
     for pkt in packet_list:
         if IP in pkt[0]:
             ip_address = pkt[0][IP].dst
@@ -42,9 +42,9 @@ def extract_dns_from_packets(packet_list):
                 continue
             try:
                 host_info = socket.gethostbyaddr(ip_address)
-                print("dns: ", host_info)
-                print("ip_src", pkt[0][IP].src)
-                dns_list.append(host_info)
+
+                print(host_info)
+                dns_list[host_info[0]] += 1
             except socket.herror as e:
                 print(f"Error for IP Address {ip_address}: {e}")
 
