@@ -40,7 +40,7 @@ def extract_dns_from_packets(packet_list):
             ip_address = pkt[0][IP].dst
             try:
                 host_info = socket.gethostbyaddr(ip_address)
-                print(host_info)
+                print("dns: ", host_info)
                 dns_list.append(host_info)
             except socket.herror as e:
                 print(f"Error for IP Address {ip_address}: {e}")
@@ -114,8 +114,8 @@ def get_endpoints():
         hostname = get_hostname(ip_address)
         res.append((hostname, ip_address, mac_address))
 
-        # if received.haslayer(ARP):
-        #     print("test", received[ARP].psrc)
+        if received.haslayer(ARP):
+             print("test", received[ARP].psrc)
 
     print(res)
     return res
@@ -159,7 +159,7 @@ def calculate_bandwidth_usage(packet_list, endpoints):
                     endpoint_usage[dst_ip]['download_time'] += (float(pkt[1]) - float(pkt[0].time))
                     endpoint_usage[dst_ip]['total_download'] += float(pkt_size * 8)
 
-    # print("endpoint_usage : ", endpoint_usage)
+    print("endpoint_usage : ", endpoint_usage)
     # Calculate upload and download speeds for each endpoint
     for endpoint in endpoint_usage:
         usage = endpoint_usage[endpoint]
