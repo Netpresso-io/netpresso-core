@@ -38,11 +38,12 @@ def extract_dns_from_packets(packet_list):
     for pkt in packet_list:
         if IP in pkt[0]:
             ip_address = pkt[0][IP].dst
-            if ip_address == "ruby ip address":
+            if ip_address == "192.168.0.154":
                 continue
             try:
                 host_info = socket.gethostbyaddr(ip_address)
                 print("dns: ", host_info)
+                print("ip_src", pkt[0][IP].src)
                 dns_list.append(host_info)
             except socket.herror as e:
                 print(f"Error for IP Address {ip_address}: {e}")
@@ -119,7 +120,7 @@ def get_endpoints():
         if received.haslayer(ARP):
              print("test", received[ARP].psrc)
 
-    print(res)
+    print("res",res)
     return res
 
 
