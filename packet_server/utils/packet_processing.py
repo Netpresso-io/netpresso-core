@@ -33,6 +33,21 @@ def process_dns_packets(packet_list):
     return dns_count
 
 
+def extract_dns_from_packets(packet_list):
+    dns_list = []
+    for pkt in packet_list:
+        if IP in pkt[0]:
+            ip_address = pkt[0][IP].dst
+            try:
+                host_info = socket.gethostbyaddr(ip_address)
+                print(host_info)
+                dns_list.append(host_info)
+            except socket.herror as e:
+                print(f"Error for IP Address {ip_address}: {e}")
+
+    return dns_list
+
+
 def extract_pcap(file_name, packet_amount):
     pkts = rdpcap(file_name, packet_amount)
     return pkts
@@ -102,6 +117,7 @@ def get_endpoints():
         # if received.haslayer(ARP):
         #     print("test", received[ARP].psrc)
 
+    print(res)
     return res
 
 
@@ -242,7 +258,7 @@ if __name__ == "__main__":
         packet_list.extend(packet_buff)
         packet_buff.clear()
 
-        top_dns = process_dns_packets(packet_list)
+        top_dns = extract_dns_from_packets(packet_list)
         db.post_top_dns(top_dns)
 
         endpoints = get_endpoints()
