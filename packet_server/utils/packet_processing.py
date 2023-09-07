@@ -38,6 +38,8 @@ def extract_dns_from_packets(packet_list):
     for pkt in packet_list:
         if IP in pkt[0]:
             ip_address = pkt[0][IP].dst
+            if ip_address == "ruby ip address":
+                continue
             try:
                 host_info = socket.gethostbyaddr(ip_address)
                 print(host_info)
