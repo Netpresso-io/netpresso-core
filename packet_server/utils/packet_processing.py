@@ -23,13 +23,13 @@ bandwidth_queue = queue.Queue()
 def process_dns_packets(packet_list):
     dns_count = Counter()
     for pkt in packet_list:
-        if DNS in pkt[0].layers() and pkt[0][DNS].an is not None:
+        if DNS in pkt[0].layers() and pkt[0][DNS].an is not None and pkt[0][DNS]:
             for dns in pkt[0][DNS].an:
-                if dns.type == 1 or dns.type == 28 \
-                        and pkt[0][DNS].getlayer("DNSQR") is not None:
+                if dns.type == 1 or dns.type == 28 and pkt[0][DNS].getlayer("DNSQR") is not None and pkt[0][DNS].an.getlayer("DNSQR") is not None:
                     if pkt[0][DNS].getlayer("DNSQR").qname is not None:
                         domain_name = pkt[0][DNS].getlayer("DNSQR").qname.decode('utf-8')
                         dns_count[domain_name] += 1
+    print(dns_count)
     return dns_count
 
 
@@ -191,29 +191,37 @@ class DB:
 
     def connect(self):
         try:
-            self._client.admin.command('ping')
+            self.client.admin.command('ping')
             print("Pinged your deployment. You successfully connected to MongoDB!")
         except Exception as e:
             print(e)
 
     def post_bandwidth_usage(self, bandwidth_usage):
-        for ip, entry in bandwidth_usage:
+        for ip, entry in bandwidth_usage.items():
             cur_doc = self.database["BandwidthUsage"].find_one({"ip": ip})
-            cur_doc_list = list(cur_doc)
-            download = entry["download_speed"]
-            upload = entry["upload_speed"]
-            if len(cur_doc_list) > 0:
-                download += cur_doc_list[0]["download"]
-                upload += cur_doc_list[0]["upload"]
+            if "download_speed" in entry:
+                download = entry["download_speed"]
+            else:
+                download = 0
+            if "upload_speed" in entry:
+                upload = entry["upload_speed"]
+            else:
+                upload = 0
+            if cur_doc is not None:
+                print(cur_doc)
+                download += cur_doc["download"]
+                upload += cur_doc["upload"]
             self.database["BandwidthUsage"].update_one({"ip":ip},{"$set": {"download": download, "upload": upload}}, upsert=True)
 
     def post_top_dns(self, dns_list):
-        for domain, amount in dns_list:
+        for domain, amount in dns_list.items():
+            domain = domain[:-1]
             cur_doc = self.database["TopDNS"].find_one({"domain": domain})
-            cur_doc_list = list(cur_doc)
-            if len(cur_doc_list) > 0:
-                amount += int(cur_doc_list[0]["amount"])
-            self.database["TopDNS"].update_one({"domain":domain},{"$set": {"amount": amount}}, upsert=True)
+            if cur_doc is not None:
+
+
+                amount += int(cur_doc["amount"])
+            self.database["TopDNS"].update_one({"domain":domain},{"$set": {"amount": amount, "lastModified": time.time()}}, upsert=True)
 
 
 if __name__ == "__main__":
