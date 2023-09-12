@@ -42,8 +42,8 @@ def extract_dns_from_packets(packet_list):
                 continue
             try:
                 host_info = socket.gethostbyaddr(ip_address)
-
-                print(host_info)
+                print("host_info", host_info)
+                print("ip.src", pkt[0][IP].src)
                 dns_list[host_info[0]] += 1
             except socket.herror as e:
                 print(f"Error for IP Address {ip_address}: {e}")
